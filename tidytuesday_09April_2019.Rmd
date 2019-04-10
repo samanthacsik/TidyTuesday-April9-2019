@@ -1,0 +1,86 @@
+---
+title: "TidyTuesday April 15, 2019"
+author: "Sam Csik"
+date: "4/9/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load packages
+```{r}
+library(tidyverse)
+library(vistime)
+library(lubridate)
+```
+
+
+# Import data from tidytuesday 2019-04-09
+```{r}
+player_dob <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/player_dob.csv")
+
+grand_slams <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/grand_slams.csv")
+
+grand_slam_timeline <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/grand_slam_timeline.csv")
+
+```
+
+# Wrangle data
+```{r}
+winners_thru_time <- grand_slams %>%
+  filter(grand_slam == "wimbledon") %>%
+  #filter(outcome == "Won") %>%
+  mutate(name = as.factor(name)) %>%
+  #mutate(year = as.factor(year)) %>%
+  mutate(grand_slam = as.factor(grand_slam)) %>%
+  arrange(name) %>%
+  group_by(name)
+
+# just single year winners
+winners_single_year <- grand_slams %>% 
+  filter(grand_slam == "wimbledon") %>% 
+  #filter(outcome == "Won") %>% 
+  mutate(name = as.factor(name)) %>% 
+  #mutate(year = as.factor(year)) %>% 
+  mutate(grand_slam = as.factor(grand_slam)) %>% 
+  arrange(name) %>% 
+  group_by(name) %>% 
+  summarize(
+    min_year = min(year),
+    max_year = max(year)
+  ) %>% 
+  mutate(single_year = ifelse(min_year == max_year, "Yes", "No")) %>% 
+  filter(single_year == "Yes")
+
+# multi-year winners but not necessarily consecutive years
+winners_multi_year <- grand_slams %>% 
+  filter(grand_slam == "wimbledon") %>% 
+  #filter(outcome == "Won") %>% 
+  mutate(name = as.factor(name)) %>% 
+  #mutate(year = as.factor(year)) %>% 
+  mutate(grand_slam = as.factor(grand_slam)) %>% 
+  arrange(name) %>% 
+  group_by(name) %>% 
+  summarize(
+    min_year = min(year),
+    max_year = max(year)
+  ) %>% 
+  mutate(single_year = ifelse(min_year == max_year, "Yes", "No")) %>% 
+  filter(single_year == "No")
+
+# new_dates <- ymd(winners_thru_time$tournament_date)
+# dates_df <- as.data.frame(new_dates)
+# 
+# winners_dates <- cbind(winners_thru_time, dates_df)
+# x <- as.data.frame(winners_dates)
+```
+
+# Plot data
+```{r}
+vistime(winners_thru_time, events = "name", groups = "grand_slam", start = "tournament_date", end = "tournament_date")
+```
+
